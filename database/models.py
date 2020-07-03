@@ -55,7 +55,7 @@ class Dematad(models.Model):
     MICRCD = models.TextField()
     IFSC = models.TextField()
     ACTYPE = models.TextField()
-    Filler3 = models.TextField()
+    FILLER3 = models.TextField()
     NAMEMAPIN = models.TextField()
     JT1MAPIN = models.TextField()
     JT2MAPIN = models.TextField()

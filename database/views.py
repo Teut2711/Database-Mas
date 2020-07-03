@@ -4,7 +4,6 @@ from django.views.generic.edit import FormView
 from  django.views.generic.base import TemplateView
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render, redirect
-redirect
 
 
 class SuccessView(TemplateView):
