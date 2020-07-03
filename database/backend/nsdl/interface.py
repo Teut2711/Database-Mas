@@ -5,6 +5,7 @@ from more_itertools.more import split_before
 import pickle
 from psqlextra.util import postgres_manager
 import os
+from itertools import tee, repeat
 import pathlib
 
 # Error if I used Pathlib, confirm if it works before recommending :
@@ -20,8 +21,8 @@ class Interface(ABC):
     @classmethod
     def clear_and_fill(cls, model, file_obj):
         model.objects.all().delete()
-        instance._initial_rows = model.objects.count()
         instance_ = cls(model, file_obj)
+        instance_.initial_rows = model.objects.count()
         instance_.uploaded_file_rows = 0
         instance_.create_database()
         instance_.final_rows = model.objects.count()
@@ -33,6 +34,7 @@ class Interface(ABC):
     @classmethod
     def update_or_create(cls, model, file_obj):
         instance_ = cls(model, file_obj)
+        instance_.initial_rows = model.objects.count()
         instance_.uploaded_file_rows = 0
         instance_.update_database()
         instance_.final_rows = model.objects.count()
@@ -57,25 +59,34 @@ class Interface(ABC):
             cols = pickle.load(p)
         return cols
 
-    @staticmethod
-    def get_model_object(model, all_cols, model_cols, chunk_piece):
+    def get_model_object(self, chunk_piece):
         chunk_piece = [i.strip() for i in chunk_piece]
-        chunk_piece = dict(zip(all_cols, chunk_piece))
-        chunk_piece = model(**{key: val
+        chunk_piece = dict(zip(self.all_cols, chunk_piece))
+        chunk_piece = self.model(**{key: val
                              for key, val in chunk_piece.items()
-                             if key in model_cols})
+                             if key in self.model_cols})
         return chunk_piece
-
+    
+    @staticmethod
+    def get_bigger_chunk(iterable):
+        #an algorithm to get two objects from iterator at once
+        a = iter(iterable)
+        for i in a:
+            try:
+                yield i + next(a)
+            except StopIteration:
+                yield i
+                
     def create_database(self):
         for chunk in self.get_data(self.file_obj):
 
             self.uploaded_file_rows += len(chunk)
 
             self.model.objects.bulk_create(
-                [self.get_model_object(self.model, self.all_cols, self.model_cols, i)
+                [self.get_model_object(i)
                     for i in chunk], ignore_conflicts=True)
 
-    @ staticmethod
+    @staticmethod
     def get_data(file_obj):
         # return iterator (type annotations are conflicting with the comments in vscode)
 
