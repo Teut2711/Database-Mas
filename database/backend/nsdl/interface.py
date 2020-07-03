@@ -20,11 +20,12 @@ class Interface(ABC):
     @classmethod
     def clear_and_fill(cls, model, file_obj):
         model.objects.all().delete()
+        instance._initial_rows = model.objects.count()
         instance_ = cls(model, file_obj)
         instance_.uploaded_file_rows = 0
-        instance_.inserts = 0
         instance_.create_database()
         instance_.final_rows = model.objects.count()
+        instance_.inserts = instance_.final_rows - instance_.initial_rows 
         instance_.failures = instance_.uploaded_file_rows - instance_.inserts
 
         return instance_
@@ -49,8 +50,6 @@ class Interface(ABC):
         self.model_cols = self.get_cols(
             PATH_COLS, f'{self.model.__name__}.pk')
 
-        self.initial_rows = model.objects.count()
-
     @staticmethod
     def get_cols(*args):
 
@@ -70,7 +69,7 @@ class Interface(ABC):
     def create_database(self):
         for chunk in self.get_data(self.file_obj):
 
-            self.inserts += len(chunk)
+            self.uploaded_file_rows += len(chunk)
 
             self.model.objects.bulk_create(
                 [self.get_model_object(self.model, self.all_cols, self.model_cols, i)
@@ -100,6 +99,6 @@ class Interface(ABC):
             yield chunk_to_dict_values(chunk)
         # from nodeirc by @_habnabit
 
-    @ abstractmethod
+    @abstractmethod
     def update_database(self):
         pass

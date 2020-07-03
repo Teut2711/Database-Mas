@@ -12,9 +12,9 @@ class SuccessView(TemplateView):
 
     # make the dictionary available in the template as "stats"
     def get_context_data(self, **kwargs):
-        ctx = super().get_context_data(**kwargs)
-        ctx['stats'] = self.request.session['stats']
-        return ctx
+        context = super().get_context_data(**kwargs)
+        context['stats'] = self.request.session['stats']
+        return context
 
 
 class NSDLView(FormView):
@@ -23,9 +23,11 @@ class NSDLView(FormView):
     success_url = '/success/'
 
     def form_valid(self, form):
+        
         stats = run.main(form.cleaned_data["filepath"])
+        print(stats)
         self.request.session['stats'] = stats
-        return super().form_valid()
+        return super().form_valid(form)
 
     def form_invalid(self, form):
         return HttpResponse("Invalid Form")
